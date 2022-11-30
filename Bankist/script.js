@@ -174,15 +174,28 @@ const createUserNames = function (accs) {
 
 createUserNames(accounts);
 
+const startLogOutTimer = function () {
+  const tick = function () {
+    const min = String(Math.trunc(time / 60)).padStart(2, 0);
+    const sec = String(time % 60).padStart(2, 0);
+
+    labelTimer.textContent = `${min}:${sec}`;
+
+    if (time === 0) {
+      clearInterval(timer);
+      labelWelcome.textContent = 'Log in to get Started';
+      containerApp.style.opacity = 0;
+    }
+    time--;
+  };
+  let time = 15;
+  tick();
+  const timer = setInterval(tick, 1000);
+  return timer;
+};
+
 //event handler
-let currentAccount;
-currentAccount = account1;
-displayMovements(currentAccount);
-
-calcDisplayBalance(currentAccount);
-
-calcDisplaySummary(currentAccount);
-containerApp.style.opacity = 100;
+let currentAccount, timer;
 
 btnLogin.addEventListener('click', function (e) {
   e.preventDefault();
@@ -215,6 +228,11 @@ btnLogin.addEventListener('click', function (e) {
       options
     ).format(now);
 
+    if (timer) {
+      clearInterval(timer);
+    }
+    timer = startLogOutTimer();
+
     displayMovements(currentAccount);
 
     calcDisplayBalance(currentAccount);
@@ -223,7 +241,6 @@ btnLogin.addEventListener('click', function (e) {
 
     inputLoginUsername.value = '';
     inputLoginPin.value = '';
-    inputLoginPin.blur();
   }
 });
 
@@ -239,7 +256,6 @@ btnTransfer.addEventListener('click', function (e) {
     recieverAcc &&
     recieverAcc?.username !== currentAccount.username
   ) {
-    //doing transfer
     currentAccount.movements.push(-amount);
     recieverAcc.movements.push(amount);
 
@@ -251,6 +267,8 @@ btnTransfer.addEventListener('click', function (e) {
     calcDisplayBalance(currentAccount);
 
     calcDisplaySummary(currentAccount);
+    clearInterval(timer);
+    timer = startLogOutTimer();
   }
   inputTransferAmount.value = '';
   inputTransferTo.value = '';
@@ -260,13 +278,15 @@ btnLoan.addEventListener('click', function (e) {
   e.preventDefault();
   const amount = +inputLoanAmount.value;
   if (amount > 0 && currentAccount.movements.some(mov => mov >= amount * 0.1)) {
-    currentAccount.movements.push(amount);
-    currentAccount.movementsDates.push(new Date().toISOString());
-    displayMovements(currentAccount);
+    setTimeout(function () {
+      currentAccount.movements.push(amount);
+      currentAccount.movementsDates.push(new Date().toISOString());
+      displayMovements(currentAccount);
 
-    calcDisplayBalance(currentAccount);
+      calcDisplayBalance(currentAccount);
 
-    calcDisplaySummary(currentAccount);
+      calcDisplaySummary(currentAccount);
+    }, 2000);
   }
   inputLoanAmount.value = '';
 });
@@ -283,6 +303,7 @@ btnClose.addEventListener('click', function (e) {
     accounts.splice(index, 1);
     inputCloseUsername.value = '';
     inputClosePin.value = '';
+    labelWelcome.textContent = 'Log in to get Started';
     containerApp.style.opacity = 0;
   }
 });
